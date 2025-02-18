@@ -23,4 +23,4 @@ jobs:
           pip install -r requirements.txt || echo "No requirements.txt found"
 
       - name: Run script
-        run: python my-function-app/script.py  # Update path if needed
+        run: python3 order_automation.py  # Update path if needed
