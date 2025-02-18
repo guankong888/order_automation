@@ -1,0 +1,26 @@
+name: Run Python Script at the 20th Minute of Every Hour
+
+on:
+  schedule:
+    - cron: '20 * * * *'  # Runs at 20 minutes past every hour
+  workflow_dispatch:  # Allows manual execution
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || echo "No requirements.txt found"
+
+      - name: Run script
+        run: python my-function-app/script.py  # Update path if needed
