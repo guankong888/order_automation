@@ -12,7 +12,7 @@ import string
 import usaddress
 from fuzzywuzzy import process, fuzz
 
-# === Logging Configuration ===
+# === Loggging Configuration ===
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
 # === Helper Function for Date Range ===
