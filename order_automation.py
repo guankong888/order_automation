@@ -19,11 +19,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(me
 def get_current_week_date_range():
     """
     Returns the current week's date range in the format "mm/dd-mm/dd/yyyy".
-    Example: "12/30-01/05/2025"
+    Adjusted to start from **Sunday** and end on **Saturday**.
+    Example: "12/29-01/04/2025"
     """
     today = datetime.today().date()
-    start_of_week = today - timedelta(days=today.weekday())  # Monday
-    end_of_week = start_of_week + timedelta(days=6)  # Sunday
+    start_of_week = today - timedelta(days=today.weekday() + 1)  # Adjusted to start on Sunday
+    end_of_week = start_of_week + timedelta(days=6)  # Ends on Saturday
     start_str = start_of_week.strftime('%m/%d')
     end_str = end_of_week.strftime('%m/%d/%Y')
     date_range = f"{start_str}-{end_str}"
