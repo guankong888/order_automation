@@ -37,7 +37,10 @@ TENANT_ID = os.environ.get("AZURE_TENANT_ID", "d72741b9-6bf4-4282-8dfd-0af4f56d4
 GRAPH_API_ENDPOINT = "https://graph.microsoft.com/v1.0"
 EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS", "stefan@n2gsupps.com")  # The mailbox to access
 SAVE_DIR = os.environ.get("SAVE_DIR", "downloads")
-MASTER_SHEET_PATH = os.environ.get("MASTER_SHEET_PATH", "NEW Master Location Sheet.csv")
+MASTER_SHEET_PATH = os.environ.get(
+    "MASTER_SHEET_PATH",
+    "https://raw.githubusercontent.com/guankong888/n2g_mls-_fetcher/main/master_location_sheet.csv"
+)
 AIRTABLE_ACCESS_TOKEN = os.environ.get("AIRTABLE_ACCESS_TOKEN", "pathhrkh0NSWxdpVy.452fa8995535bdf0bb0b76de386eb60ee6c98088c9eb0ef567a425f6d5ae831c")
 AIRTABLE_BASE_ID = os.environ.get("AIRTABLE_BASE_ID", "appJrWoXe5H2YZnmU")
 AIRTABLE_TABLE_NAME = os.environ.get("AIRTABLE_TABLE_NAME", get_current_week_date_range())  # Updated line
