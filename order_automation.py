@@ -331,46 +331,38 @@ def extract_street_address(addr):
 def load_master_data(path):
     try:
         master_data = pd.read_csv(path, encoding='latin-1')
-        if master_data.shape[1] < 3:
-            logging.error("Master sheet does not have at least 3 columns.")
-            return None
-
-        master_data = master_data.iloc[:, [1, 2]]
-        master_data.columns = ["Club Code", "Address"]
-
-        # Remove invalid entries
-        master_data = master_data[master_data["Club Code"].str.upper() != 'NAN']
-        master_data = master_data[master_data["Address"].str.lower() != 'nan']
-
-        # Normalize the Club Code and Address
-        master_data["Club Code"] = master_data["Club Code"].astype(str).str.strip().str.upper()
-        master_data["Normalized_Address"] = master_data["Address"].astype(str).apply(normalize_address)
-
-        # Drop rows with invalid or missing addresses
-        master_data = master_data.dropna(subset=["Normalized_Address"])
-
-        # Extract Street_Address from Normalized_Address
-        master_data["Street_Address"] = master_data["Normalized_Address"].apply(extract_street_address)
-
-        # Drop rows with invalid or missing street addresses
-        master_data = master_data.dropna(subset=["Street_Address"])
-
-        # Log the first few rows of master data
-        logging.info("Master data preview:\n%s", master_data.head().to_string(index=False))
-
-        # Log all unique normalized street addresses for verification
-        logging.info("Total unique normalized street addresses in master data: %d", master_data["Street_Address"].nunique())
-
-        # Filter master data to only 5-character uppercase alphanumeric Club Codes
-        master_data = master_data[master_data["Club Code"].str.match(r"^[A-Z0-9]{5}$")]
-
-        # Log the first few rows of filtered master data
-        logging.info("Filtered master data to only 5-character uppercase alphanumeric codes:\n%s", master_data.head().to_string(index=False))
-
-        return master_data
     except Exception as e:
-        logging.error("Error reading master sheet: %s", e)
+        logging.error("Error reading master sheet at %s: %s", path, e)
         return None
+
+    # ensure we have exactly the two columns we need
+    expected = {"Club Code", "Address"}
+    if not expected.issubset(master_data.columns):
+        logging.error(
+            "Master sheet must have 'Club Code' and 'Address' columns. Found: %s",
+            list(master_data.columns),
+        )
+        return None
+
+    # select & clean
+    master_data = master_data[["Club Code", "Address"]].copy()
+    master_data["Club Code"] = (
+        master_data["Club Code"].astype(str).str.strip().str.upper()
+    )
+    master_data["Address"] = master_data["Address"].astype(str).str.strip()
+
+    # normalize & drop empties
+    master_data["Normalized_Address"] = master_data["Address"].apply(normalize_address)
+    master_data = master_data.dropna(subset=["Normalized_Address"])
+
+    # extract street and drop empties
+    master_data["Street_Address"] = master_data["Normalized_Address"].apply(
+        extract_street_address
+    )
+    master_data = master_data.dropna(subset=["Street_Address"])
+
+    logging.info("Master data loaded: %d rows", len(master_data))
+    return master_data
 
 def normalize_addresses_in_report(report, address_column):
     # Create a new 'Normalized_Address' column instead of overwriting the original
