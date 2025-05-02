@@ -37,10 +37,7 @@ TENANT_ID = os.environ.get("AZURE_TENANT_ID", "d72741b9-6bf4-4282-8dfd-0af4f56d4
 GRAPH_API_ENDPOINT = "https://graph.microsoft.com/v1.0"
 EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS", "stefan@n2gsupps.com")  # The mailbox to access
 SAVE_DIR = os.environ.get("SAVE_DIR", "downloads")
-MASTER_SHEET_PATH = os.environ.get(
-    "MASTER_SHEET_PATH",
-    "https://raw.githubusercontent.com/guankong888/n2g_mls-_fetcher/main/master_location_sheet.csv"
-)
+MASTER_SHEET_PATH = os.environ.get("MASTER_SHEET_PATH", "NEW Master Location Sheet.csv")
 AIRTABLE_ACCESS_TOKEN = os.environ.get("AIRTABLE_ACCESS_TOKEN", "pathhrkh0NSWxdpVy.452fa8995535bdf0bb0b76de386eb60ee6c98088c9eb0ef567a425f6d5ae831c")
 AIRTABLE_BASE_ID = os.environ.get("AIRTABLE_BASE_ID", "appJrWoXe5H2YZnmU")
 AIRTABLE_TABLE_NAME = os.environ.get("AIRTABLE_TABLE_NAME", get_current_week_date_range())  # Updated line
@@ -331,38 +328,46 @@ def extract_street_address(addr):
 def load_master_data(path):
     try:
         master_data = pd.read_csv(path, encoding='latin-1')
+        if master_data.shape[1] < 3:
+            logging.error("Master sheet does not have at least 3 columns.")
+            return None
+
+        master_data = master_data.iloc[:, [1, 2]]
+        master_data.columns = ["Club Code", "Address"]
+
+        # Remove invalid entries
+        master_data = master_data[master_data["Club Code"].str.upper() != 'NAN']
+        master_data = master_data[master_data["Address"].str.lower() != 'nan']
+
+        # Normalize the Club Code and Address
+        master_data["Club Code"] = master_data["Club Code"].astype(str).str.strip().str.upper()
+        master_data["Normalized_Address"] = master_data["Address"].astype(str).apply(normalize_address)
+
+        # Drop rows with invalid or missing addresses
+        master_data = master_data.dropna(subset=["Normalized_Address"])
+
+        # Extract Street_Address from Normalized_Address
+        master_data["Street_Address"] = master_data["Normalized_Address"].apply(extract_street_address)
+
+        # Drop rows with invalid or missing street addresses
+        master_data = master_data.dropna(subset=["Street_Address"])
+
+        # Log the first few rows of master data
+        logging.info("Master data preview:\n%s", master_data.head().to_string(index=False))
+
+        # Log all unique normalized street addresses for verification
+        logging.info("Total unique normalized street addresses in master data: %d", master_data["Street_Address"].nunique())
+
+        # Filter master data to only 5-character uppercase alphanumeric Club Codes
+        master_data = master_data[master_data["Club Code"].str.match(r"^[A-Z0-9]{5}$")]
+
+        # Log the first few rows of filtered master data
+        logging.info("Filtered master data to only 5-character uppercase alphanumeric codes:\n%s", master_data.head().to_string(index=False))
+
+        return master_data
     except Exception as e:
-        logging.error("Error reading master sheet at %s: %s", path, e)
+        logging.error("Error reading master sheet: %s", e)
         return None
-
-    # ensure we have exactly the two columns we need
-    expected = {"Club Code", "Address"}
-    if not expected.issubset(master_data.columns):
-        logging.error(
-            "Master sheet must have 'Club Code' and 'Address' columns. Found: %s",
-            list(master_data.columns),
-        )
-        return None
-
-    # select & clean
-    master_data = master_data[["Club Code", "Address"]].copy()
-    master_data["Club Code"] = (
-        master_data["Club Code"].astype(str).str.strip().str.upper()
-    )
-    master_data["Address"] = master_data["Address"].astype(str).str.strip()
-
-    # normalize & drop empties
-    master_data["Normalized_Address"] = master_data["Address"].apply(normalize_address)
-    master_data = master_data.dropna(subset=["Normalized_Address"])
-
-    # extract street and drop empties
-    master_data["Street_Address"] = master_data["Normalized_Address"].apply(
-        extract_street_address
-    )
-    master_data = master_data.dropna(subset=["Street_Address"])
-
-    logging.info("Master data loaded: %d rows", len(master_data))
-    return master_data
 
 def normalize_addresses_in_report(report, address_column):
     # Create a new 'Normalized_Address' column instead of overwriting the original
