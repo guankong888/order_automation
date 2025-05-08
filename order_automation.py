@@ -582,6 +582,8 @@ def main():
     access_token = authenticate_graph()
     report_files = download_reports(access_token)
 
+    logging.info("Report files found: %d", len(report_files))
+
     if not report_files:
         logging.info("No reports downloaded after filtering by date. Exiting.")
         return
@@ -591,9 +593,16 @@ def main():
         logging.error("Master data could not be loaded or is empty after filtering. Exiting.")
         return
 
+    logging.info("Master data rows loaded: %d", len(master_data))
+
     try:
         club_summary = process_reports(report_files, master_data)
+
+        if club_summary is not None:
+            logging.info("Club summary rows generated: %d", len(club_summary))
+
         save_order_database(club_summary)
+
         if not club_summary.empty:
             update_airtable(club_summary)
             logging.info("Process completed successfully!")
