@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 COMMIT
+#!/usr/bin/env python3
 import os
 import logging
 import pandas as pd
